@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Filmes</title>
+    <style>
+        /* Estilo básico dos cards */
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: #f5f5f5;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 15px;
+            width: 250px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            margin-top: 0;
+        }
+
+        .buttons {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .buttons button {
+            flex: 1;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .delete {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .edit {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Add New Film</h2>
+    <form id="form-adicionar">
+        <input type="text" id="title" placeholder="Title" required>
+        <input type="number" id="year" placeholder="Year" required>
+        <input type="text" id="genre" placeholder="Genre" required>
+        <button type="submit">Add</button>
+    </form>
+
+
+    <h1>Films</h1>
+    <div id="films-container" class="container"></div>
+
+    <script>
+        async function carregarFilmes() {
+            try {
+                const resposta = await fetch('http://localhost:4000/filmes');
+                const datas = await resposta.json();
+                const films = datas;
+
+                const container = document.getElementById('films-container');
+                container.innerHTML = '';
+
+                films.forEach(film => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+
+                    card.innerHTML = `
+          <h3>${film.title}</h3>
+          <p><strong>ID:</strong> ${film.id || 'Unknown'}</p>
+            <p><strong>Year:</strong> ${film.year}</p>
+            <p><strong>Genre:</strong> ${film.genre || 'Unknown'}</p>
+            <div class="buttons">
+              <button class="edit" onclick="editarFilme(${film.id})">Edit</button>
+              <button class="delete" onclick="deletarFilme(${film.id})">Delete</button>
+            </div>
+          `;
+
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Film not found:', error);
+            }
+        }
+
+        async function deletarFilme(id) {
+            if (confirm('Are you sure wanna delete the film?')) {
+                try {
+                    await fetch(`http://localhost:4000/filmes/${id}`, {
+                        method: 'DELETE'
+                    });
+                    alert('Film deleting has completed!');
+                    carregarFilmes(); // Atualiza a lista
+                } catch (error) {
+                    console.error('Error on deleting the film', error);
+                }
+            }
+        }
+
+        const formAdicionar = document.getElementById('form-adicionar');
+
+        formAdicionar.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Impede o reload da página
+
+            const title = document.getElementById('title').value;
+            const year = document.getElementById('year').value;
+            const genre = document.getElementById('genre').value;
+
+            const novoFilme = {
+                title,
+                year,
+                genre
+            };
+
+            try {
+                await fetch('http://localhost:4000/filmes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(novoFilme)
+                });
+
+                alert('Film added successfully!');
+                formAdicionar.reset(); // Limpa o formulário
+                carregarFilmes(); // Atualiza a lista de filmes
+            } catch (error) {
+                console.error('Error adding film!', error);
+            }
+        });
+
+
+async function editarFilme(id) {
+    try {
+        // Получаем все фильмы
+        const res = await fetch("http://localhost:4000/filmes");
+        const films = await res.json();
+        const film = films.find(f => f.id === id);
+
+        if (!film) {
+            alert("Film not found!");
+            return;
+        }
+
+        // Предлагаем пользователю изменить значения
+        const newTitle = prompt("New title:", film.title);
+        if (newTitle === null) return;
+
+        const newYear = prompt("New year:", film.year);
+        if (newYear === null) return;
+
+        const newGenre = prompt("New genre:", film.genre);
+        if (newGenre === null) return;
+
+        const updatedFilm = {
+            title: newTitle,
+            year: newYear,
+            genre: newGenre
+        };
+
+        // Отправляем обновление на сервер
+        await fetch(`http://localhost:4000/filmes/${id}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(updatedFilm)
+        });
+
+        alert("Film updated!");
+        carregarFilmes();
+
+    } catch (error) {
+        console.error("Error editing film:", error);
+    }
+}
+
+        carregarFilmes();
+    </script>
+
+</body>
+
+</html>
