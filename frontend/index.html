@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Filmes</title>
+    <style>
+        /* Estilo básico dos cards */
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: #f5f5f5;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 15px;
+            width: 250px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h3 {
+            margin-top: 0;
+        }
+
+        .buttons {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .buttons button {
+            flex: 1;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .delete {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .edit {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Adicionar Novo Filme</h2>
+    <form id="form-adicionar">
+        <input type="text" id="titulo" placeholder="Título" required>
+        <input type="number" id="ano_lancamento" placeholder="Ano de Lançamento" required>
+        <input type="text" id="genero" placeholder="Gênero" required>
+        <button type="submit">Adicionar Filme</button>
+    </form>
+
+
+    <h1>Filmes Cadastrados</h1>
+    <div id="filmes-container" class="container"></div>
+
+    <script>
+        async function carregarFilmes() {
+            try {
+                const resposta = await fetch('http://localhost:3000/filmes');
+                const dados = await resposta.json();
+                const filmes = dados.filmes;
+
+                const container = document.getElementById('filmes-container');
+                container.innerHTML = '';
+
+                filmes.forEach(filme => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+
+                    card.innerHTML = `
+          <h3>${filme.titulo}</h3>
+          <p><strong>ID:</strong> ${filme.id || 'Desconhecido'}</p>
+            <p><strong>Ano:</strong> ${filme.ano_lancamento}</p>
+            <p><strong>Genero:</strong> ${filme.genero || 'Desconhecido'}</p>
+            <div class="buttons">
+              <button class="edit" onclick="editarFilme(${filme.id})">Editar</button>
+              <button class="delete" onclick="deletarFilme(${filme.id})">Deletar</button>
+            </div>
+          `;
+
+                    container.appendChild(card);
+                });
+            } catch (erro) {
+                console.error('Erro ao carregar filmes:', erro);
+            }
+        }
+
+        async function deletarFilme(id) {
+            if (confirm('Tem certeza que deseja deletar este filme?')) {
+                try {
+                    await fetch(`http://localhost:3000/filmes/${id}`, {
+                        method: 'DELETE'
+                    });
+                    alert('Filme deletado com sucesso!');
+                    carregarFilmes(); // Atualiza a lista
+                } catch (erro) {
+                    console.error('Erro ao deletar filme:', erro);
+                }
+            }
+        }
+
+        const formAdicionar = document.getElementById('form-adicionar');
+
+        formAdicionar.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Impede o reload da página
+
+            const titulo = document.getElementById('titulo').value;
+            const ano_lancamento = document.getElementById('ano_lancamento').value;
+            const genero = document.getElementById('genero').value;
+
+            const novoFilme = {
+                titulo,
+                ano_lancamento,
+                genero
+            };
+
+            try {
+                await fetch('http://localhost:3000/filmes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(novoFilme)
+                });
+
+                alert('Filme adicionado com sucesso!');
+                formAdicionar.reset(); // Limpa o formulário
+                carregarFilmes(); // Atualiza a lista de filmes
+            } catch (erro) {
+                console.error('Erro ao adicionar filme:', erro);
+            }
+        });
+
+
+        function editarFilme(id) {
+            alert(`Função de editar ainda não implementada para o filme ${id}`);
+            // Depois a gente faz abrir um formulário de edição!
+        }
+
+        // Carrega filmes assim que abrir a página
+        carregarFilmes();
+    </script>
+
+</body>
+
+</html>
